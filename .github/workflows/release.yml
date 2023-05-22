@@ -25,18 +25,14 @@ jobs:
         with:
           node-version: 16.x
 
-      - name: Generate changelog
-        id: create_release
-        run: npx changelogithub --draft --name ChatGPT-Desktop-${{ steps.vars.outputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-
   build-app:
     needs: create-release
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-20.04, windows-latest]
+        include:
+          - target: aarch64-apple-darwin
+            platform: macos-latest
 
     runs-on: ${{ matrix.platform }}
 
@@ -46,12 +42,6 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           version: latest
-
-      - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-20.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: install dependencies (mac only)
         if: matrix.platform == 'macos-latest'
@@ -78,8 +68,7 @@ jobs:
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_KEY_PASSWORD: ""
         with:
           tagName: ${{ github.ref_name }}
@@ -87,3 +76,4 @@ jobs:
           releaseBody: ""
           releaseDraft: true
           prerelease: false
+          args: --target ${{matrix.target}}
