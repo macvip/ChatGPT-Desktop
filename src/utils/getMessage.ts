@@ -39,7 +39,19 @@ export async function getMemoryList() {
  * 获取apiKey
  */
 export const getOpenAIKey = () => {
-  const { apiKey } = useSettingsStore()
+  const { apiKey, proxy } = useSettingsStore()
+
+  const { currentSession } = useSessionStore()
+
+  if (proxy.bypass && proxy.url.startsWith('https://api.chatanywhere') && currentSession) {
+    if (
+      currentSession.type === 'text' &&
+      currentSession.model!.startsWith('gpt-3.5-turbo')
+    ) {
+      console.log('使用免费的openai key')
+      return 'sk-0PfcSdT723UR44igwVxvEWvLoZJgi0FJyZWy0WCCATp5ka2a'
+    }
+  }
 
   if (!apiKey) {
     Message.warning(t('message.pleaseInsertOpenAiApiKey'))
